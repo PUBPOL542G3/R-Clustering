@@ -1,0 +1,209 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+#installing appropriate packages
+#importing and reading merged data
+```
+
+```{r}
+library(rio)
+#install_formats()
+linkexcel = 'https://github.com/PUBPOL542G3/pythondeliverable-/raw/main/Triple_Merge.xlsx'
+TM2_Data=import(linkexcel)
+```
+
+```{r}
+#testing that our merged data did import
+#refining & displaying our merged data to only show "employment", "C02" and "forest_area"
+```
+
+```{r}
+DF_Clus=TM2_Data[,c('employment', 'CO2', 'forest_area')]
+summary(DF_Clus)
+```
+```{r}
+#rescaling employment, C02 and forest_area units into a new, comparable variable
+```
+
+```{r}
+DF_Clus=scale(DF_Clus)
+summary(DF_Clus)
+```
+```{r}
+#renaming our subset indexes and verifying our inputs
+```
+```{r}
+row.names(DF_Clus)=TM2_Data$country
+head(DF_Clus)
+```
+
+
+```{r}
+#setting a seed number in order to recreate results
+```
+```{r}
+set.seed(999)
+```
+
+
+```{r}
+#deciding distance method and computing the distance matrix
+```
+```{r}
+library(cluster)
+DF_Clus_A=cluster::daisy(x=DF_Clus)
+```
+
+
+```{r}
+#designated the number of clusters desired
+```
+```{r}
+NumCluster=6
+res.pam = pam(x=DF_Clus_A,
+              k = NumCluster,
+              cluster.only = F)
+```
+
+
+```{r}
+#adding results to the original data frame
+```
+```{r}
+TM2_Data$pam=as.factor(res.pam$clustering)
+```
+
+
+```{r}
+#querying data from cluster number 2
+```
+```{r}
+TM2_Data[TM2_Data$pam==2,'country']
+```
+
+
+```{r}
+#querying which cluster "peru" was classified under
+```
+```{r}
+TM2_Data[TM2_Data$country=="Peru",'pam']
+```
+
+```{r}
+#querying how many results (i.e. countries) were designed under each clustering group
+```
+```{r}
+table(TM2_Data$pam)
+```
+
+
+```{r}
+#loading required packages
+```
+```{r}
+library(factoextra)
+```
+
+
+```{r}
+#generating the size and everage silhouette width of each cluster
+```
+```{r}
+fviz_silhouette(res.pam)
+```
+
+
+```{r}
+#saving individual silhouettes
+```
+```{r}
+pamEval=data.frame(res.pam$silinfo$widths)
+head(pamEval)
+```
+
+
+```{r}
+#calling up all negative silhouettes (i.e. those silhouettes that are poorly clustered)
+```
+```{r}
+pamEval[pamEval$sil_width<0,]
+```
+
+
+```{r}
+#preparing a bidemensional map
+#saving coordinates to original data frame
+```
+```{r}
+projectedData = cmdscale(DF_Clus_A, k=2)
+TM2_Data$dim1 = projectedData[,1]
+TM2_Data$dim2 = projectedData[,2]
+```
+
+
+```{r}
+#displaying the bidemensional map created above
+```
+```{r}
+base= ggplot(data=TM2_Data,
+             aes(x=dim1, y=dim2,
+                 label=country)) 
+base + geom_text(size=2)
+```
+
+
+```{r}
+#plot results from PAM 
+```
+```{r}
+pamPlot=base + labs(title = "PAM") + geom_point(size=2,
+                                              aes(color=pam),
+                                              show.legend = F)  
+```
+
+
+```{r}
+#displaying the PAM plot results from above
+```
+```{r}
+pamPlot
+```
+
+
+```{r}
+#annotating plot points with country name on map
+```
+```{r}
+library(ggrepel)
+pamPlot + geom_text_repel(size=3,aes(label=country))
+```
+
+
+```{r}
+#annotating outliers in the dataset
+```
+```{r}
+LABEL=ifelse(TM2_Data$db==0,TM2_Data$country,"")
+
+pamPlot + geom_text_repel(aes(label=country))
+```
+
+```{r}
+#DO we need to run factor analysis?????
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
